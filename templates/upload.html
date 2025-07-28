@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+
+        <meta name="description" content="">
+        <meta name="author" content="">
+
+        <title>Upload File CSV</title>
+
+        <!-- CSS FILES -->        
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700&family=Open+Sans&display=swap" rel="stylesheet">           
+        <link href="{{ url_for('static', filename='assets/css/bootstrap.min.css') }}" rel="stylesheet">
+        <link href="{{ url_for('static', filename='assets/css/bootstrap-icons.css') }}" rel="stylesheet">
+        <link href="{{ url_for('static', filename='assets/css/templatemo-topic-listing.css') }}" rel="stylesheet">
+<!--
+
+TemplateMo 590 topic listing
+
+https://templatemo.com/tm-590-topic-listing
+
+-->
+    </head>
+
+    <body class="topics-listing-page" id="top">
+
+            <nav class="navbar navbar-expand-lg navbar-light bg-light shadow-sm">
+                <div class="container">
+                    <a class="navbar-brand" href="{{ url_for('index') }}">
+                        <span>ChatGPT Sentiment</span>
+                    </a>
+    
+                    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                        <span class="navbar-toggler-icon"></span>
+                    </button>
+    
+                    <div class="collapse navbar-collapse" id="navbarNav">
+                        <ul class="navbar-nav ms-lg-5 me-lg-auto">
+                            <li class="nav-item">
+                                <a class="nav-link text-dark click-scroll" href="{{ url_for('index') }}">Beranda</a>
+                            </li>
+
+                            <li class="nav-item dropdown">
+                                <a class="nav-link text-dark dropdown-toggle" href="#section_5" id="navbarLightDropdownMenuLink" role="button" data-bs-toggle="dropdown" aria-expanded="false">Klasifikasi Data</a>
+
+                                <ul class="dropdown-menu dropdown-menu-light" aria-labelledby="navbarLightDropdownMenuLink">
+                                    <li><a class="dropdown-item active" href="{{ url_for('upload') }}">Upload Data</a></li>
+
+                                    <li><a class="dropdown-item" href="{{ url_for('hasil') }}">Hasil Klasifikasi</a></li>
+                                </ul>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </nav>
+
+            <section class="hero-section d-flex justify-content-center align-items-center" id="section_1">
+                <div class="container">
+                    <div class="row">
+    
+                        <div class="col-lg-8 col-12 mx-auto">
+                            <h1 class="text-white text-center">Analisis File Sentimen</h1>
+                            <h6 class="text-center text-white">Pastikan file yang diunggah berformat CSV ya</h6>
+
+                            {% with messages = get_flashed_messages(with_categories=true) %}
+                                {% if messages %}
+                                    {% for category, message in messages %}
+                                        <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                                            {{ message }}
+                                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                                        </div>
+                                    {% endfor %}
+                                {% endif %}
+                            {% endwith %}
+    
+                            <!-- Form Input Sentimen -->
+                            <form method="POST" enctype="multipart/form-data">
+                                <div class="mb-3">
+                                    <label for="file" class="form-label">Pilih file CSV:</label>
+                                    <input type="file" class="form-control" name="file" accept=".csv" required>
+                                </div>
+                                <button id="predict-button" type="submit" class="btn btn-primary">Prediksi</button>
+                                <div id="chartContainer" style="width: 100%; max-width: 600px; margin: auto; padding-top: 20px;">
+                                {% if session['last_predicted_sentiments'] %}
+                                <h3 class="mt-5">Grafik Hasil Prediksi</h3>
+                                <canvas id="sentimentChart" width="400" height="200"></canvas>
+                            </div>
+                            </form>
+                            {% if table_html %}
+                                <div class="mt-5 bg-white p-4 rounded shadow">
+                                    <h4 class="text-center mb-3">Hasil Prediksi Sentimen</h4>
+                                    <div class="table-responsive">
+                                        {{ table_html | safe }}
+                                    </div>
+                                    {% if output_filename %}
+                                    <div class="text-center mt-4">
+                                        <a href="{{ url_for('download', filename=output_filename) }}" class="btn btn-success">
+                                            <i class="bi bi-download"></i> Unduh Hasil Prediksi
+                                        </a>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            {% endif %}
+                        </div>             
+                    </div>
+                </div>
+            </section>
+
+            <!-- <div class="container mt-5">
+                <h2>Upload File CSV</h2>
+                <form method="POST" enctype="multipart/form-data">
+                    <div class="mb-3">
+                        <label for="file" class="form-label">Pilih file CSV:</label>
+                        <input type="file" class="form-control" name="file" accept=".csv" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Prediksi</button>
+                </form>
+            </div> -->
+
+        <!-- JAVASCRIPT FILES -->
+        <script src="{{ url_for('static', filename='assets/js/jquery.min.js') }}"></script>
+        <script src="{{ url_for('static', filename='assets/js/bootstrap.bundle.min.js') }}"></script>
+        <script src="{{ url_for('static', filename='assets/js/jquery.sticky.js') }}"></script>
+        <script src="{{ url_for('static', filename='assets/js/custom.js') }}"></script>
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+fetch("/sentiment_chart_data")
+  .then(response => response.json())
+  .then(data => {
+    const ctx = document.getElementById("sentimentChart").getContext("2d");
+    const chart = new Chart(ctx, {
+      type: "bar",
+      data: {
+        labels: Object.keys(data),
+        datasets: [{
+          label: "Jumlah Sentimen",
+          data: Object.values(data),
+          backgroundColor: ["#f44336", "#9e9e9e", "#4caf50"]
+        }]
+      }
+    });
+  });
+</script>
+{% endif %}
+    </body>
+</html>

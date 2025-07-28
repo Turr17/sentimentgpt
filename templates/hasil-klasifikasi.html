@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Hasil Klasifikasi</title>
+
+  <!-- Fonts & Styles -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700&family=Open+Sans&display=swap" rel="stylesheet">
+  <link href="{{ url_for('static', filename='assets/css/bootstrap.min.css') }}" rel="stylesheet">
+  <link href="{{ url_for('static', filename='assets/css/bootstrap-icons.css') }}" rel="stylesheet">
+  <link href="{{ url_for('static', filename='assets/css/templatemo-topic-listing.css') }}" rel="stylesheet">
+</head>
+
+<body class="topics-listing-page" id="top">
+
+  <nav class="navbar navbar-expand-lg navbar-light bg-light shadow-sm">
+    <div class="container">
+      <a class="navbar-brand" href="{{ url_for('index') }}">
+        <span>ChatGPT Sentiment</span>
+      </a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+
+      <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav ms-lg-5 me-lg-auto">
+          <li class="nav-item">
+            <a class="nav-link text-dark" href="{{ url_for('index') }}#section_1">Beranda</a></li>
+          <li class="nav-item dropdown">
+            <a class="nav-link text-dark dropdown-toggle" href="#" data-bs-toggle="dropdown">Klasifikasi Data</a>
+            <ul class="dropdown-menu">
+              <li><a class="dropdown-item" href="{{ url_for('upload') }}">Upload Data</a></li>
+              <li><a class="dropdown-item active" href="{{ url_for('hasil') }}">Hasil Klasifikasi</a></li>
+            </ul>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+  <section class="hero-section d-flex justify-content-center align-items-center" id="section_1">
+  <div class="container">
+    <h2 class="mb-4">Hasil Klasifikasi Sentimen</h2>
+
+    <!-- Filter -->
+    <form method="get" action="{{ url_for('hasil') }}" class="mb-3">
+      <label for="sentiment" class="form-label">Filter Sentimen:</label>
+      <select name="sentiment" id="sentiment" class="form-select w-auto d-inline-block" onchange="this.form.submit()">
+        <option value="" {% if not selected_filter %}selected{% endif %}>Semua</option>
+        <option value="positif" {% if selected_filter == 'positif' %}selected{% endif %}>Positif</option>
+        <option value="negatif" {% if selected_filter == 'negatif' %}selected{% endif %}>Negatif</option>
+        <option value="netral" {% if selected_filter == 'netral' %}selected{% endif %}>Netral</option>
+      </select>
+    </form>
+
+    <p>{{ data|length }} data ditampilkan untuk filter: <strong>{{ selected_filter if selected_filter else "Semua" }}</strong></p>
+
+    <!-- Grid untuk tabel dan pie chart -->
+    <div class="row">
+      <!-- Tabel Sentimen -->
+      <div class="col-lg-8 col-12 mb-4">
+        <div class="table-responsive">
+          <table class="table table-bordered table-striped" id="sentimentTable">
+            <thead>
+              <tr>
+                <th>Teks</th>
+                <th>Sentimen</th>
+              </tr>
+            </thead>
+            <tbody id="tableBody">
+              {% for item in data %}
+              <tr>
+                <td>{{ item.text }}</td>
+                <td>{{ item.sentiment }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Pie Chart -->
+      <div class="col-lg-4 col-12 mb-4">
+        <div class="custom-block bg-white shadow-lg p-4 h-100">
+          <h5 class="text-center mb-3">Piechart Persentase Sentimen</h5>
+          <canvas id="sentimentPieChart" height="250"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- Pagination -->
+    <nav>
+      <ul class="pagination justify-content-center">
+        <li class="page-item"><a class="page-link" href="#" id="prevBtn">← Sebelumnya</a></li>
+        <li class="page-item"><a class="page-link" href="#" id="nextBtn">Berikutnya →</a></li>
+      </ul>
+    </nav>
+  </div>
+</section>
+
+
+  <!-- Pagination Script -->
+  <script>
+    const rowsPerPage = 15;
+    let currentPage = 1;
+    const tableRows = Array.from(document.querySelectorAll("#tableBody tr"));
+
+    function displayTable() {
+      const start = (currentPage - 1) * rowsPerPage;
+      const end = start + rowsPerPage;
+
+      tableRows.forEach((row, index) => {
+        row.style.display = (index >= start && index < end) ? "" : "none";
+      });
+
+      // Disable buttons when needed
+      document.getElementById('prevBtn').parentElement.classList.toggle('disabled', currentPage === 1);
+      const totalPages = Math.ceil(tableRows.length / rowsPerPage);
+      document.getElementById('nextBtn').parentElement.classList.toggle('disabled', currentPage === totalPages);
+    }
+
+    document.getElementById("prevBtn").addEventListener("click", function (e) {
+      e.preventDefault();
+      if (currentPage > 1) {
+        currentPage--;
+        displayTable();
+      }
+    });
+
+    document.getElementById("nextBtn").addEventListener("click", function (e) {
+      e.preventDefault();
+      const totalPages = Math.ceil(tableRows.length / rowsPerPage);
+      if (currentPage < totalPages) {
+        currentPage++;
+        displayTable();
+      }
+    });
+
+    displayTable(); // Initial load
+  </script>
+
+  <!-- JS Files -->
+  <script src="{{ url_for('static', filename='assets/js/jquery.min.js') }}"></script>
+  <script src="{{ url_for('static', filename='assets/js/bootstrap.bundle.min.js') }}"></script>
+  <script src="{{ url_for('static', filename='assets/js/jquery.sticky.js') }}"></script>
+  <script src="{{ url_for('static', filename='assets/js/custom.js') }}"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script>
+    const pieCtx = document.getElementById('sentimentPieChart').getContext('2d');
+    new Chart(pieCtx, {
+        type: 'pie',
+        data: {
+            labels: ['Positif', 'Negatif', 'Netral'],
+            datasets: [{
+                label: 'Persentase Sentimen',
+                data: [
+                    {{ sentiment_percentage.get('positif', 0) }},
+                    {{ sentiment_percentage.get('negatif', 0) }},
+                    {{ sentiment_percentage.get('netral', 0) }}
+                ],
+                    backgroundColor: [
+                        'rgba(40, 167, 69, 0.7)', // Positif (Hijau)
+                        'rgba(220, 53, 69, 0.7)', // Negatif (Merah)
+                        'rgba(108, 117, 125, 0.7)' // Netral (Abu-abu)
+                    ],
+                    borderColor: [
+                        'rgba(40, 167, 69, 1)',
+                        'rgba(220, 53, 69, 1)',
+                        'rgba(108, 117, 125, 1)'
+                    ],
+                borderWidth: 1
+            }]
+        },
+        options: {
+            plugins: {
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return context.label + ': ' + context.parsed + '%';
+                        }
+                    }
+                }
+            }
+        }
+    });
+</script>
+</body>
+</html>
