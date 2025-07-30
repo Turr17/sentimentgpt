@@ -1,5 +1,6 @@
 from flask import Flask, request, render_template, redirect, url_for, send_file, flash, session, jsonify
 from pymongo import MongoClient
+from dotenv import load_dotenv
 import pandas as pd
 import os, re, string, pickle
 import matplotlib.pyplot as plt
@@ -16,15 +17,17 @@ from googletrans import Translator
 import emoji
 
 app = Flask(__name__)
-app.secret_key = 'fatur21sipcr' 
+app.secret_key = os.getenv("SECRET_KEY")
 
 app.config['UPLOAD_FOLDER'] = 'uploads'
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
+load_dotenv()
+
 # Koneksi MongoDB
-client = MongoClient(
-    'mongodb://fatur21si:fatur21si@cluster0-shard-00-00.wiqdc.mongodb.net:27017,cluster0-shard-00-01.wiqdc.mongodb.net:27017,cluster0-shard-00-02.wiqdc.mongodb.net:27017/?replicaSet=atlas-11dt48-shard-0&ssl=true&authSource=admin'
-)
+mongo_uri = os.getenv("MONGO_URI")
+client = pymongo.MongoClient(mongo_uri)
+
 db = client['db_pa']
 inputan_collection = db['data_inputan']
 
@@ -259,4 +262,4 @@ def hasil():
     return render_template('hasil-klasifikasi.html', data=data, selected_filter=filter_sentiment, sentiment_count=sentiment_count, sentiment_percentage=sentiment_percentage)
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=False)
